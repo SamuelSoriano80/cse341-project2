@@ -11,7 +11,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000",
+      "url": "https://cse341-project2-8tr8.onrender.com",
       "description": "Development server"
     },
     {
