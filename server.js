@@ -1,6 +1,7 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const dotenv = require('dotenv');
+const cors = require('cors');
 
 // Load environment variables
 dotenv.config();
@@ -28,6 +29,62 @@ const connectToMongoDB = async () => {
   console.log('Connected to MongoDB successfully');
   console.log(`Database: ${process.env.DB_NAME}`);
 };
+
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const bcrypt = require('bcrypt');
+
+// Session setup
+app.use(session({
+  secret: 'secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax'
+  }
+}));
+
+// Passport setup
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Local strategy
+passport.use(new LocalStrategy(
+  async (username, password, done) => {
+    try {
+      const user = await db.collection('users').findOne({ username });
+      if (!user) return done(null, false, { message: 'Incorrect username.' });
+
+      const match = await bcrypt.compare(password, user.password);
+      if (!match) return done(null, false, { message: 'Incorrect password.' });
+
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }
+));
+
+passport.serializeUser((user, done) => done(null, user._id));
+
+const { ObjectId } = require('mongodb');
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
+});
+
+app.use(cors({
+  origin: 'https://cse341-project2-8tr8.onrender.com',
+  credentials: true
+}));
 
 // Import routes
 const userRoutes = require('./routes/users');

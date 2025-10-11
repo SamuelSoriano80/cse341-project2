@@ -7,6 +7,11 @@ const {
     deleteProduct
 } = require('../controllers/productController');
 
+function isAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) return next();
+    return res.status(401).json({ message: 'Unauthorized' });
+}
+
 module.exports = (db) => {
     const router = express.Router();
     
@@ -28,13 +33,13 @@ module.exports = (db) => {
     router.get('/:id', getProductById);
 
     // POST /api/products - Create new product
-    router.post('/', createProduct);
+    router.post('/', isAuthenticated, createProduct);
 
     // PUT /api/products/:id - Update product
-    router.put('/:id', updateProduct);
+    router.put('/:id', isAuthenticated, updateProduct);
 
     // DELETE /api/products/:id - Delete product
-    router.delete('/:id', deleteProduct);
+    router.delete('/:id', isAuthenticated, deleteProduct);
 
     return router;
 };
